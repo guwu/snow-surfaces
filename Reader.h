@@ -1,5 +1,6 @@
 // Reader.h
 // Loads in files
+#pragma once
 
 #include "DataStructures.h"
 #include <iostream>
@@ -18,4 +19,5 @@ public:
     bool ReadFile(string file);
 
     std::vector<Vertex> data;
+    Vertex min, max;
 };
