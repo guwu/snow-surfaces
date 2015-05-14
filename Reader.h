@@ -18,6 +18,6 @@ public:
     // Output: If read suceeded
     bool ReadFile(string file);
 
-    std::vector<Vertex> data;
+    std::vector<ScalarFieldPoint> data;
     Vertex min, max;
 };

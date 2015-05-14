@@ -16,9 +16,9 @@ extern ScalarFieldPoint ***scalar_field;
 class MarchingCubes
 {
 public:
-    MarchingCubes(float st);
+    MarchingCubes() {  }
     vector<Triangle*> triangles;
-
+    vector<Triangle*> March(float st);
 private:
     float Surface;
     void MarchingCube(int x, int y, int z);

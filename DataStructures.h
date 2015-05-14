@@ -5,7 +5,7 @@
 
 #include <string>
 #include <vector>
-
+using namespace std;
 class Vertex
 {
 public:
@@ -18,17 +18,20 @@ public:
     Vertex cross(Vertex&);
 
     float x, y, z;
+    float nx, ny, nz;
 };
 
 struct ScalarFieldPoint
 {
     float x, y, z;
+    float nx, ny, nz;
     float s;
+    vector<ScalarFieldPoint*> neighbors;
 };
 
 struct Triangle
 {
-    Vertex verts[3];
+    Vertex *verts[3];
 };
 
 struct Edge

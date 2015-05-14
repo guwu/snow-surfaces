@@ -300,7 +300,7 @@ int triTable[256][16] =
 };
 
 
-MarchingCubes::MarchingCubes(float st)
+vector<Triangle*> MarchingCubes::March(float st)
 {
     Surface = st;
     //#pragma omp parallel for schedule(dynamic)
@@ -314,6 +314,7 @@ MarchingCubes::MarchingCubes(float st)
             }
         }
     }
+    return triangles;
 }
 
 void MarchingCubes::MarchingCube(int i, int j, int k)
@@ -337,7 +338,7 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
     ScalarFieldPoint *p4 = &scalar_field[i][j + 1][k + 1];
     float Ss = Surface;
     int cubetype = 0;
-    Vertex verts[12];
+    Vertex* verts[12];
     Edge p01, p12, p23, p30, p45, p56, p67, p74, p04, p15, p26, p37;
     p01.intersection = false;
     p12.intersection = false;
@@ -413,7 +414,10 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
     {
         cubeindex |= 128;
     }
-    Vertex i_vert;
+
+    if (edgeTable[cubeindex] == 0)
+        return;
+
     if (edgeTable[cubeindex] & 1)
     {
         // calculate p0 to p1 intersection
@@ -421,9 +425,14 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
         if (t <= 1 && t >= 0)
         {
             p01.intersection = true;
-            i_vert.x = p0->x + t * (p1->x - p0->x);
-            i_vert.y = p0->y + t * (p1->y - p0->y);
-            i_vert.z = p0->z + t * (p1->z - p0->z);
+            Vertex *i_vert = new Vertex();
+            i_vert->x = p0->x + t * (p1->x - p0->x);
+            i_vert->y = p0->y + t * (p1->y - p0->y);
+            i_vert->z = p0->z + t * (p1->z - p0->z);
+            i_vert->nx = p0->nx + t * (p1->nx - p0->nx);
+            i_vert->ny = p0->ny + t * (p1->ny - p0->ny);
+            i_vert->nz = p0->nz + t * (p1->nz - p0->nz);
+            p01.i_vert = i_vert;
             verts[0] = i_vert;
             numpoints++;
         }
@@ -436,9 +445,14 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
         if (t <= 1 && t >= 0)
         {
             p12.intersection = true;
-            i_vert.x = p1->x + t * (p2->x - p1->x);
-            i_vert.y = p1->y + t * (p2->y - p1->y);
-            i_vert.z = p1->z + t * (p2->z - p1->z);
+            Vertex *i_vert = new Vertex();
+            i_vert->x = p1->x + t * (p2->x - p1->x);
+            i_vert->y = p1->y + t * (p2->y - p1->y);
+            i_vert->z = p1->z + t * (p2->z - p1->z);
+            i_vert->nx = p1->nx + t * (p2->nx - p1->nx);
+            i_vert->ny = p1->ny + t * (p2->ny - p1->ny);
+            i_vert->nz = p1->nz + t * (p2->nz - p1->nz);
+            p12.i_vert = i_vert;
             verts[1] = i_vert;
             numpoints++;
         }
@@ -450,9 +464,15 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
         t = (Ss - p2->s) / (p3->s - p2->s);
         if (t <= 1 && t >= 0)
         {
-            i_vert.x = p2->x + t * (p3->x - p2->x);
-            i_vert.y = p2->y + t * (p3->y - p2->y);
-            i_vert.z = p2->z + t * (p3->z - p2->z);
+            p23.intersection = true;
+            Vertex *i_vert = new Vertex();
+            i_vert->x = p2->x + t * (p3->x - p2->x);
+            i_vert->y = p2->y + t * (p3->y - p2->y);
+            i_vert->z = p2->z + t * (p3->z - p2->z);
+            i_vert->nx = p2->nx + t * (p3->nx - p2->nx);
+            i_vert->ny = p2->ny + t * (p3->ny - p2->ny);
+            i_vert->nz = p2->nz + t * (p3->nz - p2->nz);
+            p23.i_vert = i_vert;
             verts[2] = i_vert;
             numpoints++;
         }
@@ -464,9 +484,15 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
         t = (Ss - p3->s) / (p0->s - p3->s);
         if (t <= 1 && t >= 0)
         {
-            i_vert.x = p3->x + t * (p0->x - p3->x);
-            i_vert.y = p3->y + t * (p0->y - p3->y);
-            i_vert.z = p3->z + t * (p0->z - p3->z);
+            p30.intersection = true;
+            Vertex *i_vert = new Vertex();
+            i_vert->x = p3->x + t * (p0->x - p3->x);
+            i_vert->y = p3->y + t * (p0->y - p3->y);
+            i_vert->z = p3->z + t * (p0->z - p3->z);
+            i_vert->nx = p3->nx + t * (p0->nx - p3->nx);
+            i_vert->ny = p3->ny + t * (p0->ny - p3->ny);
+            i_vert->nz = p3->nz + t * (p0->nz - p3->nz);
+            p30.i_vert = i_vert;
             verts[3] = i_vert;
             numpoints++;
         }
@@ -478,9 +504,15 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
         t = (Ss - p4->s) / (p5->s - p4->s);
         if (t <= 1 && t >= 0)
         {
-            i_vert.x = p4->x + t * (p5->x - p4->x);
-            i_vert.y = p4->y + t * (p5->y - p4->y);
-            i_vert.z = p4->z + t * (p5->z - p4->z);
+            p45.intersection = true;
+            Vertex *i_vert = new Vertex();
+            i_vert->x = p4->x + t * (p5->x - p4->x);
+            i_vert->y = p4->y + t * (p5->y - p4->y);
+            i_vert->z = p4->z + t * (p5->z - p4->z);
+            i_vert->nx = p4->nx + t * (p5->nx - p4->nx);
+            i_vert->ny = p4->ny + t * (p5->ny - p4->ny);
+            i_vert->nz = p4->nz + t * (p5->nz - p4->nz);
+            p45.i_vert = i_vert;
             verts[4] = i_vert;
             numpoints++;
         }
@@ -492,9 +524,15 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
         t = (Ss - p5->s) / (p6->s - p5->s);
         if (t <= 1 && t >= 0)
         {
-            i_vert.x = p5->x + t * (p6->x - p5->x);
-            i_vert.y = p5->y + t * (p6->y - p5->y);
-            i_vert.z = p5->z + t * (p6->z - p5->z);
+            p56.intersection = true;
+            Vertex *i_vert = new Vertex();
+            i_vert->x = p5->x + t * (p6->x - p5->x);
+            i_vert->y = p5->y + t * (p6->y - p5->y);
+            i_vert->z = p5->z + t * (p6->z - p5->z);
+            i_vert->nx = p5->nx + t * (p6->nx - p5->nx);
+            i_vert->ny = p5->ny + t * (p6->ny - p5->ny);
+            i_vert->nz = p5->nz + t * (p6->nz - p5->nz);
+            p56.i_vert = i_vert;
             verts[5] = i_vert;
             numpoints++;
         }
@@ -506,9 +544,15 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
         t = (Ss - p6->s) / (p7->s - p6->s);
         if (t <= 1 && t >= 0)
         {
-            i_vert.x = p6->x + t * (p7->x - p6->x);
-            i_vert.y = p6->y + t * (p7->y - p6->y);
-            i_vert.z = p6->z + t * (p7->z - p6->z);
+            p67.intersection = true;
+            Vertex *i_vert = new Vertex();
+            i_vert->x = p6->x + t * (p7->x - p6->x);
+            i_vert->y = p6->y + t * (p7->y - p6->y);
+            i_vert->z = p6->z + t * (p7->z - p6->z);
+            i_vert->nx = p6->nx + t * (p7->nx - p6->nx);
+            i_vert->ny = p6->ny + t * (p7->ny - p6->ny);
+            i_vert->nz = p6->nz + t * (p7->nz - p6->nz);
+            p67.i_vert = i_vert;
             verts[6] = i_vert;
             numpoints++;
         }
@@ -520,9 +564,15 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
         t = (Ss - p7->s) / (p4->s - p7->s);
         if (t <= 1 && t >= 0)
         {
-            i_vert.x = p7->x + t * (p4->x - p7->x);
-            i_vert.y = p7->y + t * (p4->y - p7->y);
-            i_vert.z = p7->z + t * (p4->z - p7->z);
+            p74.intersection = true;
+            Vertex *i_vert = new Vertex();
+            i_vert->x = p7->x + t * (p4->x - p7->x);
+            i_vert->y = p7->y + t * (p4->y - p7->y);
+            i_vert->z = p7->z + t * (p4->z - p7->z);
+            i_vert->nx = p7->nx + t * (p4->nx - p7->nx);
+            i_vert->ny = p7->ny + t * (p4->ny - p7->ny);
+            i_vert->nz = p7->nz + t * (p4->nz - p7->nz);
+            p74.i_vert = i_vert;
             verts[7] = i_vert;
             numpoints++;
         }
@@ -534,9 +584,15 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
         t = (Ss - p0->s) / (p4->s - p0->s);
         if (t <= 1 && t >= 0)
         {
-            i_vert.x = p0->x + t * (p4->x - p0->x);
-            i_vert.y = p0->y + t * (p4->y - p0->y);
-            i_vert.z = p0->z + t * (p4->z - p0->z);
+            p04.intersection = true;
+            Vertex *i_vert = new Vertex();
+            i_vert->x = p0->x + t * (p4->x - p0->x);
+            i_vert->y = p0->y + t * (p4->y - p0->y);
+            i_vert->z = p0->z + t * (p4->z - p0->z);
+            i_vert->nx = p0->nx + t * (p4->nx - p0->nx);
+            i_vert->ny = p0->ny + t * (p4->ny - p0->ny);
+            i_vert->nz = p0->nz + t * (p4->nz - p0->nz);
+            p04.i_vert = i_vert;
             verts[8] = i_vert;
             numpoints++;
         }
@@ -548,9 +604,15 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
         t = (Ss - p1->s) / (p5->s - p1->s);
         if (t <= 1 && t >= 0)
         {
-            i_vert.x = p1->x + t * (p5->x - p1->x);
-            i_vert.y = p1->y + t * (p5->y - p1->y);
-            i_vert.z = p1->z + t * (p5->z - p1->z);
+            p15.intersection = true;
+            Vertex *i_vert = new Vertex();
+            i_vert->x = p1->x + t * (p5->x - p1->x);
+            i_vert->y = p1->y + t * (p5->y - p1->y);
+            i_vert->z = p1->z + t * (p5->z - p1->z);
+            i_vert->nx = p1->nx + t * (p5->nx - p1->nx);
+            i_vert->ny = p1->ny + t * (p5->ny - p1->ny);
+            i_vert->nz = p1->nz + t * (p5->nz - p1->nz);
+            p15.i_vert = i_vert;
             verts[9] = i_vert;
             numpoints++;
         }
@@ -562,9 +624,15 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
         t = (Ss - p2->s) / (p6->s - p2->s);
         if (t <= 1 && t >= 0)
         {
-            i_vert.x = p2->x + t * (p6->x - p2->x);
-            i_vert.y = p2->y + t * (p6->y - p2->y);
-            i_vert.z = p2->z + t * (p6->z - p2->z);
+            p26.intersection = true;
+            Vertex *i_vert = new Vertex();
+            i_vert->x = p2->x + t * (p6->x - p2->x);
+            i_vert->y = p2->y + t * (p6->y - p2->y);
+            i_vert->z = p2->z + t * (p6->z - p2->z);
+            i_vert->nx = p2->nx + t * (p6->nx - p2->nx);
+            i_vert->ny = p2->ny + t * (p6->ny - p2->ny);
+            i_vert->nz = p2->nz + t * (p6->nz - p2->nz);
+            p26.i_vert = i_vert;
             verts[10] = i_vert;
             numpoints++;
         }
@@ -576,25 +644,25 @@ void MarchingCubes::MarchingCube(int i, int j, int k)
         t = (Ss - p3->s) / (p7->s - p3->s);
         if (t <= 1 && t >= 0)
         {
-            i_vert.x = p3->x + t * (p7->x - p3->x);
-            i_vert.y = p3->y + t * (p7->y - p3->y);
-            i_vert.z = p3->z + t * (p7->z - p3->z);
+            p37.intersection = true;
+            Vertex *i_vert = new Vertex();
+            i_vert->x = p3->x + t * (p7->x - p3->x);
+            i_vert->y = p3->y + t * (p7->y - p3->y);
+            i_vert->z = p3->z + t * (p7->z - p3->z);
+            i_vert->nx = p3->nx + t * (p7->nx - p3->nx);
+            i_vert->ny = p3->ny + t * (p7->ny - p3->ny);
+            i_vert->nz = p3->nz + t * (p7->nz - p3->nz);
+            p37.i_vert = i_vert;
             verts[11] = i_vert;
             numpoints++;
         }
     }
-
     for (int i = 0; triTable[cubeindex][i] != -1; i += 3)
     {
-        Triangle *t = new Triangle;
-        Vertex v1, v2, v3;
-        v1 = verts[triTable[cubeindex][i]];
-        v2 = verts[triTable[cubeindex][i + 1]];
-        v3 = verts[triTable[cubeindex][i + 2]];
-
-        t->verts[0] = v1;
-        t->verts[1] = v2;
-        t->verts[2] = v3;
+        Triangle *t = new Triangle();
+        t->verts[0] = verts[triTable[cubeindex][i]];
+        t->verts[1] = verts[triTable[cubeindex][i + 1]];
+        t->verts[2] = verts[triTable[cubeindex][i + 2]];
         triangles.push_back(t);
     }
 }

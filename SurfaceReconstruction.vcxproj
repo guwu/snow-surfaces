@@ -79,11 +79,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\System.cpp" />
+    <ClCompile Include="DataStructs.cpp" />
+    <ClCompile Include="MarchingCubes.cpp" />
+    <ClCompile Include="Reader.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataStructures.h" />
+    <ClInclude Include="MarchingCubes.h" />
     <ClInclude Include="Reader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
