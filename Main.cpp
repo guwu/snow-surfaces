@@ -343,6 +343,6 @@ void GenScalarField(Vertex min, Vertex max)
 float Kernel(float input)
 {
     // max( 0 , (1 - s^2) ^ 3 )
-    return max(0.f,pow(1-pow(input,2),3));
+    return max(0.f,cos(20*input)*.1+.9-1.1*(pow(input,2))+.159*abs(input));
 }
 
