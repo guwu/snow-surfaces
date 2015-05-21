@@ -19,7 +19,7 @@ void OutputRenderman();
 float cell_size = 0.4;
 float Neighborhood = 1.25f;
 float part_rad = 0.1;
-float surface = 1.25;
+float surface = 0.75;
 
 int numx, numy, numz;
 ScalarFieldPoint ***scalar_field;
@@ -285,6 +285,7 @@ void GenScalarField(Vertex min, Vertex max)
             {
                 for (int k = (int)floor(z - Neigborsteps); k < (int)ceil(z + Neigborsteps); k++)
                 {
+                    #pragma omp critical
                     scalar_field[i][j][k].neighbors.push_back(&data[n]);
                 }
             }
@@ -430,10 +431,10 @@ float Kernel(float input)
 {
 	// max( 0 , (1 - s^2) ^ 3 )
     
-    //return max((double)0., (double)pow(1 - pow(input, 2), 3));
-    if(input>=0)
-        return max((double)0., (double)(.03*sin(40 * input)*input + 2 - 2.022*pow(input, 2)) / 2);
-	else
-        return max((double)0., (double)(cos(20 * input)*.1 + 1.9 - 2.153*pow(input, 2) + 0.159*fabs((double)input)) / 2);
+    return max(0.f, pow(1 - pow(input, 2), 3));
+    //if(input>=0)
+    //    return max((double)0., (double)(.03*sin(40 * input)*input + 2 - 2.022*pow(input, 2)) / 2.);
+	//else
+    //    return max((double)0., (double)(cos(20 * input)*.1 + 1.9 - 2.153*pow(input, 2) + 0.159*fabs((double)input)) / 2.);
 }
 
