@@ -15,11 +15,28 @@ float Kernel(float input);
 void OutputPovRay();
 void OutputRenderman();
 
+#ifndef CELLSIZE
+#define CELLSIZE 0.4
+#endif
+
+#ifndef NEIGHBOR
+#define NEIGHBOR 1.25
+#endif
+
+#ifndef RADIUS
+#define RADIUS 0.1
+#endif
+
+#ifndef SURFACE
+#define SURFACE 0.5
+#endif
+
+
 // Globals
-float cell_size = 0.4;
-float Neighborhood = 1.25f;
-float part_rad = 0.1;
-float surface = 0.75;
+float cell_size = CELLSIZE;
+float Neighborhood = NEIGHBOR;
+float part_rad = RADIUS;
+float surface = SURFACE;
 
 int numx, numy, numz;
 ScalarFieldPoint ***scalar_field;
@@ -431,7 +448,7 @@ float Kernel(float input)
 {
 	// max( 0 , (1 - s^2) ^ 3 )
     
-    return max(0.f, pow(1 - pow(input, 2), 3));
+    return max((double)0., (double)pow(1 - pow(input, 2), 3));
     //if(input>=0)
     //    return max((double)0., (double)(.03*sin(40 * input)*input + 2 - 2.022*pow(input, 2)) / 2.);
 	//else
