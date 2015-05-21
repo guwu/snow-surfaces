@@ -21,7 +21,7 @@ Reader::~Reader()
 bool Reader::ReadFile(string filename)
 {
     ifstream file;
-    file.open(filename);
+    file.open(filename.c_str(), std::ifstream::in);
     if (file.is_open())
     {
         float x, y, z;
