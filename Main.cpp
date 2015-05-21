@@ -59,9 +59,92 @@ int main(int argc, char **argv)
 void OutputPovRay()
 {
     ofstream output;
-    output.open("testmesh.pov");
+    output.open("2116.pov");
     if (output.is_open())
     {
+        output << "// grid cell size = " << cell_size << endl;
+        output << "// Neighborhood size = " << Neighborhood << endl;
+        output << "// particle radius = " << part_rad << endl;
+        output << "// surface = " << surface << endl;
+
+        output << "\n// -w2560 -h1440 +a0.1 +q11 +J0.5 +R3\n\n";
+        output << "\n#version 3.7;\n\n";
+
+        output << "global_settings{\n";
+        output << "    assumed_gamma 1.0\n";
+        output << "    number_of_waves 3\n";
+        output << "    max_trace_level 10\n";
+        output << "    //subsurface {} \n";
+        output << "    //radiosity{}\n";
+        output << "}\n";
+        output << "\n";
+        output << "#include \"colors.inc\"\n";
+        output << "#include \"shapes.inc\"\n";
+        output << "#include \"textures.inc\"\n";
+        output << "\n";
+        output << "camera{\n";
+        output << "    location <58.0, 2.0, -15.0>\n";
+        output << "    angle 90 //  direction z\n";
+        output << "    up y\n";
+        output << "    right x*image_width / image_height\n";
+        output << "    look_at <0.0, 0.0, 0.0>\n";
+        output << "}\n";
+        output << "\n";
+        output << "light_source{ <20.0, 100.0, -170.0> colour rgb <0.5, 0.5, 0.5> }\n";
+        output << "light_source{ <50.0, -10.0, 10.0> colour rgb <0.1, 0.1, 0.1> }\n";
+        output << "//light_source { <-35.0, 230.0, -150.0> colour White }\n";
+        output << "light_source{ <90, 220, -30>\n";
+        output << "    color rgb <0.5, 0.5, 0.5> * 0.1\n";
+        output << "    area_light 200, 200, 10, 10\n";
+        output << "    jitter\n";
+        output << "}\n";
+        output << "\n";
+        output << "#declare Snow =\n";
+        output << "texture{\n";
+        output << "    pigment{ color rgb<.38, .75, 1> }\n";
+        output << "    finish{\n";
+        output << "        ambient 0.1\n";
+        output << "        diffuse 0.7\n";
+        output << "        brilliance 0.8\n";
+        output << "        specular 0.4\n";
+        output << "        roughness 0.04\n";
+        output << "    }\n";
+        output << "    normal{\n";
+        output << "        granite 0.2\n";
+        output << "        scale 0.3\n";
+        output << "    }\n";
+        output << "    finish{\n";
+        output << "        brilliance 0.75\n";
+        output << "        phong 0.2\n";
+        output << "        phong_size 5\n";
+        output << "        subsurface{ translucency <0.3, 0.41, 0.48> }\n";
+        output << "\n";
+        output << "        //emission .2\n";
+        output << "        //use with  radiosity instead\n";
+        output << "    }\n";
+        output << "}\n";
+        output << "\n";
+        output << "#declare Asphalt = texture{\n";
+        output << "pigment{ color rgb<1, 1, 1>*0.2 }\n";
+        output << "normal{ bumps 0.5 scale 0.005 }\n";
+        output << "finish{ diffuse 0.9 phong 0.1 }\n";
+        output << "}\n\n";
+
+        output << "fog{\n";
+        output << "    distance 800 color rgb <0.39, 0.51, 0.61>\n";
+        output << "}\n";
+        output << "\n";
+        output << "background{ color rgb <0.39, 0.51, 0.61> }\n";
+        output << "\n"; 
+        output << "/* Ground plane */\n";
+        output << "plane{\n";
+        output << "    y, -60\n";
+        output << "    texture{\n";
+        output << "    Asphalt\n";
+        output << "}\n";
+        output << "}\n\n";
+
+        output << "mesh {\n";
         for (int i = 0; i < triangles.size(); i++)
         {
             output << "smooth_triangle { ";
@@ -110,6 +193,9 @@ void OutputPovRay()
 
             output << " }\n";
         }
+
+        output << "\ntexture {\n\tSnow\n}interior { ior 1.31 }\n}";
+
         output.close();
     }
 }
@@ -344,10 +430,10 @@ float Kernel(float input)
 {
 	// max( 0 , (1 - s^2) ^ 3 )
     
-	return max(0.,pow(1-pow(input,2),3));
-//if(input>=0)
-	//   return max(0.,(.03*sin(40*input)*input+2-2.022*pow(input,2))/2);
-	//else
-	//   return max(0.,(cos(20*input)*.1+1.9-2.153*pow(input,2)+0.159*abs(input))/2);
+    //return max((double)0., (double)pow(1 - pow(input, 2), 3));
+    if(input>=0)
+        return max((double)0., (double)(.03*sin(40 * input)*input + 2 - 2.022*pow(input, 2)) / 2);
+	else
+        return max((double)0., (double)(cos(20 * input)*.1 + 1.9 - 2.153*pow(input, 2) + 0.159*abs((double)input)) / 2);
 }
 
