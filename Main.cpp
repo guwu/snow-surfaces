@@ -67,7 +67,7 @@ void OutputPovRay()
         output << "// particle radius = " << part_rad << endl;
         output << "// surface = " << surface << endl;
 
-        output << "\n// -w2560 -h1440 +a0.1 +q11 +J0.5 +R3\n\n";
+        output << "\n// -w1440 -h1440 +a0.1 +q11 +J0.5 +R3\n\n";
         output << "\n#version 3.7;\n\n";
 
         output << "global_settings{\n";
@@ -434,6 +434,6 @@ float Kernel(float input)
     if(input>=0)
         return max((double)0., (double)(.03*sin(40 * input)*input + 2 - 2.022*pow(input, 2)) / 2);
 	else
-        return max((double)0., (double)(cos(20 * input)*.1 + 1.9 - 2.153*pow(input, 2) + 0.159*abs((double)input)) / 2);
+        return max((double)0., (double)(cos(20 * input)*.1 + 1.9 - 2.153*pow(input, 2) + 0.159*fabs((double)input)) / 2);
 }
 
