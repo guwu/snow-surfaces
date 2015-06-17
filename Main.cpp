@@ -8,6 +8,20 @@
 #include <iostream>
 #include <fstream>
 #include <math.h>
+#include <sstream>
+#include <string>
+
+// g++ patch
+namespace patch
+{
+	template < typename T > std::string to_string( const T& n )
+	{
+		std::ostringstream stm;
+		stm << n;
+		return stm.str();
+	}
+
+}
 
 
 
@@ -260,8 +274,8 @@ void OutputRenderman()
 void OutputScalarField()
 {
     ofstream output;
-    std::string sfile = "scalarfield." + std::to_string(cell_size) + "." + std::to_string(Neighborhood) + "." + std::to_string(num_neighbors) + "." + std::to_string(part_rad) + ".field";
-    output.open(sfile, fstream::out);
+    std::string sfile = "scalarfield." + patch::to_string(cell_size) + "." + patch::to_string(Neighborhood) + "." + patch::to_string(num_neighbors) + "." + patch::to_string(part_rad) + ".field";
+    output.open(sfile.c_str());
     if (output.is_open())
     {
         output << "// grid cell size = " << cell_size << endl;
