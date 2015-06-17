@@ -9,18 +9,22 @@
 #include <fstream>
 #include <math.h>
 
+
+
 // Function Prototypes
 void GenScalarField(Vertex min, Vertex max);
 float Kernel(float input);
 void OutputPovRay();
 void OutputRenderman();
+void OutputScalarField();
+float* smallest(float, float*);
 
 #ifndef CELLSIZE
 #define CELLSIZE 0.4
 #endif
 
 #ifndef NEIGHBOR
-#define NEIGHBOR 1.25
+#define NEIGHBOR 0.5
 #endif
 
 #ifndef RADIUS
@@ -28,7 +32,7 @@ void OutputRenderman();
 #endif
 
 #ifndef SURFACE
-#define SURFACE 0.5
+#define SURFACE .2
 #endif
 
 
@@ -37,6 +41,7 @@ float cell_size = CELLSIZE;
 float Neighborhood = NEIGHBOR;
 float part_rad = RADIUS;
 float surface = SURFACE;
+const int num_neighbors = 3;
 
 int numx, numy, numz;
 ScalarFieldPoint ***scalar_field;
@@ -61,6 +66,7 @@ int main(int argc, char **argv)
 
     // Generate Scalar Field
     GenScalarField(reader.min, reader.max);
+    OutputScalarField();
 
     // Create Mesh
     MarchingCubes mc; 
@@ -250,6 +256,38 @@ void OutputRenderman()
 
 }
 
+
+void OutputScalarField()
+{
+    ofstream output;
+    std::string sfile = "scalarfield." + std::to_string(cell_size) + "." + std::to_string(Neighborhood) + "." + std::to_string(num_neighbors) + "." + std::to_string(part_rad) + ".field";
+    output.open(sfile, fstream::out);
+    if (output.is_open())
+    {
+        output << "// grid cell size = " << cell_size << endl;
+        output << "// Neighborhood size = " << Neighborhood << endl;
+        output << "// num neighbors = " << num_neighbors << endl;
+        output << "// particle radius = " << part_rad << endl;
+        
+        output << "// " << numx << " " << numy << " " << numz << " " << endl << endl;
+        for (int i = 0; i < numx; i++)
+        {
+            for (int j = 0; j < numy; j++)
+            {
+                for (int k = 0; k < numz; k++)
+                {
+                    output << i << " " << j << " " << k << " ";
+                    output << " " << scalar_field[i][j][k].x;
+                    output << " " << scalar_field[i][j][k].y;
+                    output << " " << scalar_field[i][j][k].z;
+                    output << " " << scalar_field[i][j][k].s << endl;
+                }
+            }
+        }
+    }
+}
+
+
 void GenScalarField(Vertex min, Vertex max)
 {
     min.x -= 5.;
@@ -265,6 +303,7 @@ void GenScalarField(Vertex min, Vertex max)
 
 
     double time0 = omp_get_wtime();
+
     // Allocate the scalar field
     scalar_field = new ScalarFieldPoint**[numx];
     for (int i = 0; i < numx; i++)
@@ -286,6 +325,7 @@ void GenScalarField(Vertex min, Vertex max)
         }
     }
     
+    // Create Neighborhoods
     #pragma omp parallel for schedule(dynamic)
     for (int n = 0; n < data.size(); n++)
     {
@@ -310,6 +350,9 @@ void GenScalarField(Vertex min, Vertex max)
         
     }
 
+    // Generate Scalar Field
+    ScalarFieldPoint *neighbors_array[num_neighbors];
+    float neighbors_dist_array[num_neighbors];
     #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < numx; i++)
     {
@@ -328,7 +371,15 @@ void GenScalarField(Vertex min, Vertex max)
                 float y = scalar_field[i][j][k].y;
                 float z = scalar_field[i][j][k].z;
                 float xdist, ydist, zdist, dist;
+                
+                for (int m = 0; m < num_neighbors; m++)
+                {
+                    neighbors_dist_array[m] = 9999999.f;
+                }
+                
+                int neighbors = 0;
 
+                // minimize the neighborhood
                 for (int n = 0; n < scalar_field[i][j][k].neighbors.size(); n++)
                 {
                     ScalarFieldPoint *node = scalar_field[i][j][k].neighbors[n];
@@ -336,8 +387,33 @@ void GenScalarField(Vertex min, Vertex max)
                     ydist = y - node->y;
                     zdist = z - node->z;
                     dist = (sqrt((xdist * xdist) + (ydist * ydist) + (zdist * zdist)));
+                    
+                    if (dist <= Neighborhood)
+                    {
+                        // Cheap implementation, just take the first n neighbors.
+                        neighbors_array[neighbors] = node;
+                        neighbors_dist_array[neighbors] = dist;
+                        neighbors++;
+                        if (neighbors == num_neighbors)
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
 
-
+                // Determine the kernel sum denominator
+                for (int n = 0; n < neighbors; n++)
+                {
+                    ScalarFieldPoint *node = neighbors_array[n];
+                    xdist = x - node->x;
+                    ydist = y - node->y;
+                    zdist = z - node->z;
+                    dist = (sqrt((xdist * xdist) + (ydist * ydist) + (zdist * zdist)));
+                    
                     if (dist <= Neighborhood)
                     {
                         ker = Kernel( dist / Neighborhood);
@@ -353,10 +429,11 @@ void GenScalarField(Vertex min, Vertex max)
                     scalar_field[i][j][k].s = 0;
                     continue;
                 }
-
-                for (int n = 0; n < scalar_field[i][j][k].neighbors.size(); n++)
+                 
+                // Determine the kernel, xbar and rbar
+                for (int n = 0; n < neighbors; n++)
                 {
-                    ScalarFieldPoint *node = scalar_field[i][j][k].neighbors[n];
+                    ScalarFieldPoint *node = neighbors_array[n];
                     xdist = x - node->x;
                     ydist = y - node->y;
                     zdist = z - node->z;
@@ -365,8 +442,8 @@ void GenScalarField(Vertex min, Vertex max)
                     if (dist <= Neighborhood)
                     {
                         ker = Kernel(dist / Neighborhood);
-                        weight = ker / s;
-                        rbar += dist;// part_rad*weight;
+                        weight = (ker / s)*(rand()/RAND_MAX)*100.f; // random bumpyness
+                        rbar += part_rad*weight*(rand() / RAND_MAX)*5.f;
                         xbar.x += node->x * weight;
                         xbar.y += node->y * weight;
                         xbar.z += node->z * weight;
@@ -381,13 +458,13 @@ void GenScalarField(Vertex min, Vertex max)
                 ydist = y - xbar.y;
                 zdist = z - xbar.z;
 
-                scalar_field[i][j][k].s = (sqrt((xdist * xdist) + (ydist * ydist) + (zdist * zdist))) - part_rad;
+                scalar_field[i][j][k].s = (sqrt((xdist * xdist) + (ydist * ydist) + (zdist * zdist))) - rbar;
             }
         }
     }
 
 
-    // Normals
+    // Generate Normals
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < numx; i++)
     {
