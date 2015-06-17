@@ -11,6 +11,9 @@ Reader::Reader()
     max.x = -9999;
     max.y = -9999;
     max.z = -9999;
+
+    min.mass = 9999;
+    max.mass = 0;
 }
 
 Reader::~Reader()
@@ -87,6 +90,7 @@ bool Reader::ReadFile(string filename)
             v.x = x;
             v.y = y;
             v.z = z;
+            v.mass = mass;
             data.push_back(v);
             if (x < min.x)
                 min.x = x;
@@ -100,6 +104,11 @@ bool Reader::ReadFile(string filename)
                 min.z = z;
             if (z > max.z)
                 max.z = z;
+
+            if(mass > max.mass)
+	            max.mass = mass;
+            if(mass < min.mass)
+	            min.mass = mass;
         }
         file.close();
         clock_t time1 = clock();

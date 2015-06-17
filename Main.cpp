@@ -356,7 +356,7 @@ void GenScalarField(Vertex min, Vertex max)
     }
     printf("allocated..");
     // Create Neighborhoods
-    #pragma omp parallel for schedule(dynamic)
+    //#pragma omp parallel for schedule(dynamic)
     for (int n = 0; n < data.size(); n++)
     {
         ScalarFieldPoint node = data[n];
@@ -384,7 +384,7 @@ void GenScalarField(Vertex min, Vertex max)
     // Generate Scalar Field
     ScalarFieldPoint *neighbors_array[num_neighbors];
     float neighbors_dist_array[num_neighbors];
-    #pragma omp parallel for schedule(dynamic)
+    //#pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < numx; i++)
     {
         for (int j = 0; j < numy; j++)
@@ -393,6 +393,7 @@ void GenScalarField(Vertex min, Vertex max)
             {
                 float s = 0;
                 float rbar = 0;
+                float r_i = 0;
                 ScalarFieldPoint xbar;
                 xbar.x = 0;
                 xbar.y = 0;
@@ -469,12 +470,13 @@ void GenScalarField(Vertex min, Vertex max)
                     ydist = y - node->y;
                     zdist = z - node->z;
                     dist = (sqrt((xdist * xdist) + (ydist * ydist) + (zdist * zdist)));
+                    //r_i = ((node->mass - min.mass)*RADIUS*4.8)/(max.mass-min.mass) + RADIUS*0.2;
 
                     if (dist <= Neighborhood)
                     {
                         ker = Kernel(dist / Neighborhood);
-                        weight = (ker / s)*(rand()/RAND_MAX)*300.f; // random bumpyness
-                        rbar += part_rad*weight*(rand() / RAND_MAX)*5.f;
+                        weight = (ker / s); 
+                        rbar += r_i*weight;
                         xbar.x += node->x * weight;
                         xbar.y += node->y * weight;
                         xbar.z += node->z * weight;
@@ -489,14 +491,14 @@ void GenScalarField(Vertex min, Vertex max)
                 ydist = y - xbar.y;
                 zdist = z - xbar.z;
 
-                scalar_field[i][j][k].s = (sqrt((xdist * xdist) + (ydist * ydist) + (zdist * zdist))) - rbar;
+                scalar_field[i][j][k].s = ((sqrt((xdist * xdist) + (ydist * ydist) + (zdist * zdist))) - rbar) + 0*((rand()/RAND_MAX)*0.5-0.25);
             }
         }
     }
     printf("Generated...");
 
     // Generate Normals
-#pragma omp parallel for schedule(dynamic)
+    //#pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < numx; i++)
     {
         for (int j = 0; j < numy; j++)
@@ -562,6 +564,7 @@ void GenScalarField(Vertex min, Vertex max)
 
     double time1 = omp_get_wtime();
     cout << (time1 - time0) << endl;
+    cout << "blah...";
 }
 
 float Kernel(float input)
