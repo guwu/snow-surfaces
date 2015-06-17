@@ -34,7 +34,7 @@ void OutputScalarField();
 float* smallest(float, float*);
 
 #ifndef CELLSIZE
-#define CELLSIZE 0.4
+#define CELLSIZE 0.8
 #endif
 
 #ifndef NEIGHBOR
@@ -62,29 +62,44 @@ ScalarFieldPoint ***scalar_field;
 vector<ScalarFieldPoint> data;
 vector<Triangle*> triangles;
 
+string infilename;
+
 // The entry point.
 int main(int argc, char **argv)
 {
     omp_set_num_threads(1);
 
+    if(argc < 2)
+	{
+		printf("Usage: ./snow_surface <input_file>\n");
+		return 1;
+	}
+
     // Read File
+    printf("Reading...");
     Reader reader;
-    if (reader.ReadFile("2116"))
+    if (reader.ReadFile(argv[1]))
     {
         data = reader.data;
+        infilename = argv[1];
     }
     else
     {
         return 1;
     }
+    printf("Finished Reading.\n");
 
     // Generate Scalar Field
+    printf("Generating Scalar field...");
     GenScalarField(reader.min, reader.max);
+    printf("Finished Generating.\n");
     OutputScalarField();
 
     // Create Mesh
+    printf("Creating Mesh...");
     MarchingCubes mc; 
     triangles = mc.March(surface);
+    printf("Finished Creating Mesh.\n");
 
     // Output Mesh
     OutputPovRay();
@@ -96,7 +111,8 @@ int main(int argc, char **argv)
 void OutputPovRay()
 {
     ofstream output;
-    output.open("2116.pov");
+    std::string file = infilename + ".pov";
+    output.open(file.c_str());
     if (output.is_open())
     {
         output << "// grid cell size = " << cell_size << endl;
@@ -274,7 +290,7 @@ void OutputRenderman()
 void OutputScalarField()
 {
     ofstream output;
-    std::string sfile = "scalarfield." + patch::to_string(cell_size) + "." + patch::to_string(Neighborhood) + "." + patch::to_string(num_neighbors) + "." + patch::to_string(part_rad) + ".field";
+    std::string sfile = infilename + patch::to_string(cell_size) + "." + patch::to_string(Neighborhood) + "." + patch::to_string(num_neighbors) + "." + patch::to_string(part_rad) + ".field";
     output.open(sfile.c_str());
     if (output.is_open())
     {
@@ -338,7 +354,7 @@ void GenScalarField(Vertex min, Vertex max)
             }
         }
     }
-    
+    printf("allocated..");
     // Create Neighborhoods
     #pragma omp parallel for schedule(dynamic)
     for (int n = 0; n < data.size(); n++)
@@ -363,6 +379,7 @@ void GenScalarField(Vertex min, Vertex max)
         }
         
     }
+    printf("neighborhoods created...");
 
     // Generate Scalar Field
     ScalarFieldPoint *neighbors_array[num_neighbors];
@@ -456,7 +473,7 @@ void GenScalarField(Vertex min, Vertex max)
                     if (dist <= Neighborhood)
                     {
                         ker = Kernel(dist / Neighborhood);
-                        weight = (ker / s)*(rand()/RAND_MAX)*100.f; // random bumpyness
+                        weight = (ker / s)*(rand()/RAND_MAX)*300.f; // random bumpyness
                         rbar += part_rad*weight*(rand() / RAND_MAX)*5.f;
                         xbar.x += node->x * weight;
                         xbar.y += node->y * weight;
@@ -476,7 +493,7 @@ void GenScalarField(Vertex min, Vertex max)
             }
         }
     }
-
+    printf("Generated...");
 
     // Generate Normals
 #pragma omp parallel for schedule(dynamic)
@@ -530,6 +547,18 @@ void GenScalarField(Vertex min, Vertex max)
             }
         }
     }
+
+    /*
+    for (int i = 0; i < numx; i++)
+    {
+        for (int j = 0; j < numy; j++)
+        {
+            for (int k = 0; k < numz; k++)
+            {
+	            //scalar_field[i]
+            }
+        }
+        }*/
 
     double time1 = omp_get_wtime();
     cout << (time1 - time0) << endl;
