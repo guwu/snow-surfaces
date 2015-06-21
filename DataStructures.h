@@ -16,7 +16,7 @@ public:
 
     float dot(Vertex&);
     Vertex cross(Vertex&);
-
+    float mass;
     float x, y, z;
     float nx, ny, nz;
 };
@@ -26,6 +26,7 @@ struct ScalarFieldPoint
     float x, y, z;
     float nx, ny, nz;
     float s;
+	float mass;
     vector<ScalarFieldPoint*> neighbors;
 };
 
